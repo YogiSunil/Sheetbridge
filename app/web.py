@@ -38,12 +38,19 @@ def convert_link():
     if not spreadsheet_id:
         return jsonify({"error": "bad_request", "message": "Invalid Google Sheets URL or spreadsheet ID"}), 400
 
-    # If user doesn't provide a range, use a safe default
-    if not sheet_range:
-        sheet_range = "Sheet!A1:Z200"
-
     try:
         service = get_sheets_service(current_app.config["GOOGLE_CREDENTIALS_PATH"])
+        
+        # If user doesn't provide a range, auto-detect the first sheet name
+        if not sheet_range:
+            from app.sheets_client import get_sheet_names
+            sheet_names = get_sheet_names(service, spreadsheet_id)
+            if not sheet_names:
+                return jsonify({"error": "bad_request", "message": "No sheets found in spreadsheet"}), 400
+            # Use first sheet with a default range
+            first_sheet = sheet_names[0]
+            sheet_range = f"{first_sheet}!A1:Z200"
+
         rows = fetch_range_as_rows(service, spreadsheet_id, sheet_range)
 
         # Optional: allow choosing header row inside the fetched range

@@ -9,6 +9,12 @@ def get_sheets_service(credentials_path: str):
     )
     return build("sheets", "v4", credentials=creds)
 
+def get_sheet_names(service, spreadsheet_id: str):
+    """Get list of sheet names in the spreadsheet"""
+    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    sheets = spreadsheet.get('sheets', [])
+    return [sheet['properties']['title'] for sheet in sheets]
+
 def fetch_range_as_rows(service, spreadsheet_id: str, sheet_range: str):
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
