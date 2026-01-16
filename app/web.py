@@ -1,15 +1,75 @@
 import io
 import pandas as pd
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, current_app, jsonify, render_template, request
+from app.sheets_client import get_sheets_service, fetch_range_as_rows
+from app.utils import extract_spreadsheet_id
 
 web_bp = Blueprint("web", __name__)
+
+def rows_to_objects(rows):
+    """Convert 2D array of rows into list of objects using first row as headers"""
+    if not rows or len(rows) < 2:
+        return []
+
+    headers = [str(h).strip() for h in rows[0]]
+    objects = []
+    for row in rows[1:]:
+        # Pad row if it's shorter than headers
+        padded = row + [""] * (len(headers) - len(row))
+        obj = {headers[i]: (padded[i].strip() if isinstance(padded[i], str) else padded[i])
+               for i in range(len(headers))}
+        # Only include rows that have at least one non-empty value
+        if any(str(v).strip() for v in obj.values()):
+            objects.append(obj)
+    return objects
 
 @web_bp.get("/")
 def home():
     return render_template("index.html")
 
+@web_bp.post("/convert_link")
+def convert_link():
+    data = request.get_json(silent=True) or {}
+    sheet_value = (data.get("sheet") or "").strip()
+    sheet_range = (data.get("range") or "").strip()
+    header_row = (data.get("header_row") or "").strip()
+
+    spreadsheet_id = extract_spreadsheet_id(sheet_value)
+    if not spreadsheet_id:
+        return jsonify({"error": "bad_request", "message": "Invalid Google Sheets URL or spreadsheet ID"}), 400
+
+    # If user doesn't provide a range, use a safe default
+    if not sheet_range:
+        sheet_range = "Sheet!A1:Z200"
+
+    try:
+        service = get_sheets_service(current_app.config["GOOGLE_CREDENTIALS_PATH"])
+        rows = fetch_range_as_rows(service, spreadsheet_id, sheet_range)
+
+        # Optional: allow choosing header row inside the fetched range
+        if header_row.isdigit():
+            n = int(header_row)
+            # header_row=1 means first row in range, so index 0
+            idx = max(0, n - 1)
+            if idx < len(rows):
+                rows = [rows[idx]] + rows[idx+1:]
+
+        objects = rows_to_objects(rows)
+
+        return jsonify({
+            "data": objects,
+            "meta": {
+                "spreadsheet_id": spreadsheet_id,
+                "range": sheet_range,
+                "rows_returned": len(objects)
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": "conversion_failed", "message": str(e)}), 500
+
 @web_bp.post("/convert")
 def convert_file_to_json():
+    """Legacy file upload endpoint"""
     if "file" not in request.files:
         return jsonify({"error": "bad_request", "message": "Missing file"}), 400
 
@@ -20,35 +80,23 @@ def convert_file_to_json():
         if filename.endswith(".csv"):
             df = pd.read_csv(f)
         elif filename.endswith(".xlsx"):
-            # read Excel from uploaded file bytes
             content = f.read()
             df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
         else:
             return jsonify({"error": "bad_request", "message": "Only .csv or .xlsx supported"}), 400
 
-        # Clean the data
-        # 1. Remove completely empty rows
         df = df.dropna(how='all')
         
-        # 2. Try to detect if first row should be header
-        # If more than 50% of first row is text and subsequent rows are different, use first row as header
         if df.shape[0] > 1:
             first_row_text_count = sum(isinstance(val, str) for val in df.iloc[0])
             if first_row_text_count > len(df.columns) * 0.5:
-                # Use first row as headers
                 df.columns = df.iloc[0]
                 df = df[1:].reset_index(drop=True)
         
-        # 3. Clean column names - remove newlines and extra spaces
         df.columns = [str(col).replace('\n', ' ').strip() for col in df.columns]
-        
-        # 4. Remove columns that are completely empty
         df = df.dropna(axis=1, how='all')
-        
-        # 5. Fill NaN with empty string for cleaner JSON
         df = df.fillna("")
         
-        # Convert to list of dicts (objects)
         records = df.to_dict(orient="records")
 
         return jsonify({

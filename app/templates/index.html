@@ -2,72 +2,62 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>SheetBridge — Upload to JSON</title>
+  <title>SheetBridge — Google Sheet to JSON</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    form {
-      margin: 20px 0;
-      padding: 20px;
-      background: #f5f5f5;
-      border-radius: 8px;
-    }
-    input[type="file"] {
-      padding: 10px;
-      margin-right: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    pre {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 4px;
-      overflow-x: auto;
-      max-height: 500px;
-      overflow-y: auto;
-    }
+    body { font-family: Arial, sans-serif; margin: 24px; max-width: 900px; }
+    input { width: 100%; padding: 10px; margin: 8px 0 16px; box-sizing: border-box; }
+    button { padding: 10px 14px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #0056b3; }
+    pre { background: #f4f4f4; padding: 12px; overflow: auto; max-height: 500px; border-radius: 4px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
+    h1 { color: #333; }
+    label { font-weight: bold; color: #555; display: block; }
   </style>
 </head>
 <body>
-  <h1>📊 SheetBridge — Upload Spreadsheet → JSON</h1>
-  <p>Upload a .csv or .xlsx file to convert it to JSON format</p>
+  <h1>📊 SheetBridge</h1>
+  <p>Paste a Google Sheets link + range to convert into JSON.</p>
 
-  <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".csv,.xlsx" required />
-    <button type="submit">Convert to JSON</button>
-  </form>
+  <label>Google Sheets URL or Spreadsheet ID</label>
+  <input id="sheetInput" placeholder="https://docs.google.com/spreadsheets/d/.... or just the ID" />
 
-  <h3>JSON Output</h3>
-  <pre id="out">Upload a file to see the JSON output...</pre>
+  <div class="row">
+    <div>
+      <label>Range (optional)</label>
+      <input id="rangeInput" placeholder="Sheet!A1:D100 (leave blank to auto-detect)" />
+    </div>
+    <div>
+      <label>Header Row Start (optional)</label>
+      <input id="headerRowInput" placeholder="e.g. 1 or 7 (leave blank = first row in range)" />
+    </div>
+  </div>
+
+  <button id="btn">Convert to JSON</button>
+
+  <h3>Output</h3>
+  <pre id="out">{}</pre>
 
   <script>
-    const form = document.getElementById("uploadForm");
+    const btn = document.getElementById("btn");
     const out = document.getElementById("out");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    btn.addEventListener("click", async () => {
       out.textContent = "Converting...";
 
-      const fd = new FormData(form);
-      const res = await fetch("/convert", { method: "POST", body: fd });
+      const payload = {
+        sheet: document.getElementById("sheetInput").value.trim(),
+        range: document.getElementById("rangeInput").value.trim(),
+        header_row: document.getElementById("headerRowInput").value.trim()
+      };
 
-      const text = await res.text(); // so errors show too
+      const res = await fetch("/convert_link", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text(); // show JSON or error HTML
       out.textContent = text;
     });
   </script>
