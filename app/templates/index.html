@@ -55,16 +55,35 @@
   </div>
 
   <h3>Output</h3>
+  <button id="downloadBtn" style="display: none; margin-bottom: 10px;">📥 Download JSON</button>
   <pre id="out">{}</pre>
 
   <script>
     const btnLink = document.getElementById("btnLink");
     const uploadForm = document.getElementById("uploadForm");
     const out = document.getElementById("out");
+    const downloadBtn = document.getElementById("downloadBtn");
+    let lastJsonData = null;
+
+    // Download JSON function
+    downloadBtn.addEventListener("click", () => {
+      if (!lastJsonData) return;
+      
+      const blob = new Blob([lastJsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
 
     // Handle Google Sheets Link
     btnLink.addEventListener("click", async () => {
       out.textContent = "Converting...";
+      downloadBtn.style.display = "none";
 
       const payload = {
         sheet: document.getElementById("sheetInput").value.trim(),
@@ -81,8 +100,19 @@
 
         const text = await res.text();
         out.textContent = text;
+        
+        // Check if it's valid JSON
+        try {
+          JSON.parse(text);
+          lastJsonData = text;
+          downloadBtn.style.display = "inline-block";
+        } catch (e) {
+          // Not valid JSON, probably an error
+          downloadBtn.style.display = "none";
+        }
       } catch (err) {
         out.textContent = JSON.stringify({"error": "request_failed", "message": err.message});
+        downloadBtn.style.display = "none";
       }
     });
 
@@ -90,14 +120,26 @@
     uploadForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       out.textContent = "Converting...";
+      downloadBtn.style.display = "none";
 
       try {
         const fd = new FormData(uploadForm);
         const res = await fetch("/convert", { method: "POST", body: fd });
         const text = await res.text();
         out.textContent = text;
+        
+        // Check if it's valid JSON
+        try {
+          JSON.parse(text);
+          lastJsonData = text;
+          downloadBtn.style.display = "inline-block";
+        } catch (e) {
+          // Not valid JSON, probably an error
+          downloadBtn.style.display = "none";
+        }
       } catch (err) {
         out.textContent = JSON.stringify({"error": "upload_failed", "message": err.message});
+        downloadBtn.style.display = "none";
       }
     });
   </script>
