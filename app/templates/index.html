@@ -2,343 +2,286 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SheetBridge Converter</title>
+  <title>SheetBridge - Spreadsheet to JSON Converter</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    /* Basic page styling */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
       padding: 20px;
-      color: #333;
     }
 
+    /* Main container */
     .container {
-      max-width: 1000px;
+      max-width: 900px;
       margin: 0 auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    .header {
+    h1 {
+      color: #2c3e50;
       text-align: center;
-      color: white;
-      margin-bottom: 40px;
-      padding: 20px;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 15px;
     }
 
-    .header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .header p {
-      font-size: 1.1rem;
-      opacity: 0.95;
-    }
-
-    .options-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
       margin-bottom: 30px;
     }
 
-    .option-card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      transition: transform 0.2s;
-    }
-
-    .option-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .option-card h3 {
-      color: #667eea;
+    /* Section styling */
+    .section {
+      background-color: #f9f9f9;
+      padding: 20px;
       margin-bottom: 20px;
-      font-size: 1.4rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      border-left: 4px solid #3498db;
+      border-radius: 3px;
     }
 
-    .option-number {
-      background: #667eea;
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      font-weight: bold;
+    .section h2 {
+      color: #2c3e50;
+      margin-top: 0;
+      font-size: 20px;
     }
 
-    .form-group {
-      margin-bottom: 15px;
-    }
-
+    /* Form elements */
     label {
       display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #555;
-      font-size: 0.9rem;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #34495e;
     }
 
-    input[type="text"],
-    input[type="file"] {
+    input[type="text"] {
       width: 100%;
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      transition: border-color 0.3s;
-    }
-
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-
-    input[type="file"] {
       padding: 10px;
-      cursor: pointer;
+      margin-bottom: 15px;
+      border: 1px solid #bdc3c7;
+      border-radius: 3px;
+      font-size: 14px;
+      box-sizing: border-box;
     }
 
-    button {
+    input[type="file"] {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #bdc3c7;
+      border-radius: 3px;
+      background-color: white;
+    }
+
+    /* Buttons */
+    button {
+      background-color: #3498db;
       color: white;
+      padding: 12px 20px;
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
+      border-radius: 3px;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      margin-top: 10px;
+      font-size: 15px;
+      width: 100%;
     }
 
     button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    .output-section {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .output-section h3 {
-      color: #667eea;
-      margin-bottom: 15px;
-      font-size: 1.4rem;
+      background-color: #2980b9;
     }
 
     #downloadBtn {
-      width: auto;
-      padding: 12px 24px;
+      background-color: #27ae60;
       margin-bottom: 15px;
-      background: #10b981;
       display: none;
     }
 
     #downloadBtn:hover {
-      background: #059669;
-      box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+      background-color: #229954;
+    }
+
+    /* Output area */
+    .output-area {
+      margin-top: 30px;
+    }
+
+    .output-area h3 {
+      color: #2c3e50;
+      margin-bottom: 10px;
     }
 
     #out {
-      background: #f8fafc;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 20px;
-      max-height: 500px;
-      overflow: auto;
+      background-color: #ecf0f1;
+      border: 1px solid #bdc3c7;
+      padding: 15px;
       font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      color: #1e293b;
+      font-size: 13px;
+      overflow: auto;
+      max-height: 400px;
       white-space: pre-wrap;
       word-wrap: break-word;
     }
 
-    .note {
-      font-size: 0.85rem;
-      color: #6b7280;
-      margin-top: 5px;
-      font-style: italic;
-    }
-
-    @media (max-width: 768px) {
-      .options-container {
-        grid-template-columns: 1fr;
-      }
-
-      .header h1 {
-        font-size: 2rem;
-      }
-
-      .option-card {
-        padding: 20px;
-      }
+    /* Small helper text */
+    .help-text {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: -10px;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>🌉 SheetBridge Converter</h1>
-      <p>Convert Google Sheets or local files to JSON format instantly</p>
+    <h1>SheetBridge Converter</h1>
+    <p class="subtitle">Convert your spreadsheets to JSON format</p>
+
+    <!-- Google Sheets Option -->
+    <div class="section">
+      <h2>Option 1: Convert from Google Sheets</h2>
+      
+      <label>Google Sheets URL or ID:</label>
+      <input type="text" id="sheetInput" placeholder="Paste your Google Sheets link here" />
+      
+      <label>Range (optional):</label>
+      <input type="text" id="rangeInput" placeholder="e.g., Sheet1!A1:D100" />
+      <p class="help-text">Leave blank to auto-detect the sheet</p>
+      
+      <label>Header Row Number (optional):</label>
+      <input type="text" id="headerRowInput" placeholder="1" />
+      <p class="help-text">Which row contains your column headers</p>
+      
+      <button id="btnLink">Convert Sheet</button>
     </div>
 
-    <div class="options-container">
-      <!-- Option 1: Google Sheets Link -->
-      <div class="option-card">
-        <h3>
-          <span class="option-number">1</span>
-          Google Sheets Link
-        </h3>
-        <div class="form-group">
-          <label>Sheet URL or ID:</label>
-          <input type="text" id="sheetInput" placeholder="https://docs.google.com/spreadsheets/d/..." />
-        </div>
-        <div class="form-group">
-          <label>Range (optional):</label>
-          <input type="text" id="rangeInput" placeholder="Sheet1!A1:Z100 or leave empty" />
-          <div class="note">Leave empty for automatic detection</div>
-        </div>
-        <div class="form-group">
-          <label>Header Row (optional):</label>
-          <input type="text" id="headerRowInput" placeholder="1" />
-          <div class="note">Default is row 1</div>
-        </div>
-        <button id="btnLink">🔗 Convert from Google Sheets</button>
-      </div>
-
-      <!-- Option 2: File Upload -->
-      <div class="option-card">
-        <h3>
-          <span class="option-number">2</span>
-          File Upload
-        </h3>
-        <form id="uploadForm">
-          <div class="form-group">
-            <label>Upload CSV or Excel file:</label>
-            <input type="file" name="file" accept=".csv, .xlsx" required />
-            <div class="note">Supports .csv and .xlsx formats</div>
-          </div>
-          <button type="submit">📤 Convert from File</button>
-        </form>
-      </div>
+    <!-- File Upload Option -->
+    <div class="section">
+      <h2>Option 2: Upload a File</h2>
+      
+      <form id="uploadForm">
+        <label>Choose CSV or Excel file:</label>
+        <input type="file" name="file" accept=".csv,.xlsx" required />
+        <p class="help-text">Accepted formats: .csv, .xlsx</p>
+        
+        <button type="submit">Convert File</button>
+      </form>
     </div>
 
-    <div class="output-section">
-      <h3>📋 Output</h3>
-      <button id="downloadBtn">📥 Download JSON</button>
+    <!-- Output Section -->
+    <div class="output-area">
+      <h3>JSON Output:</h3>
+      <button id="downloadBtn">Download JSON File</button>
       <pre id="out">{}</pre>
     </div>
   </div>
 
   <script>
-    const btnLink = document.getElementById("btnLink");
-    const uploadForm = document.getElementById("uploadForm");
-    const out = document.getElementById("out");
-    const downloadBtn = document.getElementById("downloadBtn");
-    let lastJsonData = null;
+    // Getting elements from the page
+    var btnLink = document.getElementById("btnLink");
+    var uploadForm = document.getElementById("uploadForm");
+    var out = document.getElementById("out");
+    var downloadBtn = document.getElementById("downloadBtn");
+    var lastJsonData = null;
 
-    // Download JSON function
-    downloadBtn.addEventListener("click", () => {
-      if (!lastJsonData) return;
+    // Function to download the JSON data
+    function downloadJson() {
+      if (!lastJsonData) {
+        return;
+      }
       
-      const blob = new Blob([lastJsonData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      // Create a blob and download it
+      var blob = new Blob([lastJsonData], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
       a.href = url;
       a.download = 'data.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    });
+    }
 
-    // Handle Google Sheets Link
-    btnLink.addEventListener("click", async () => {
+    downloadBtn.addEventListener("click", downloadJson);
+
+    // Handle Google Sheets button click
+    btnLink.addEventListener("click", function() {
       out.textContent = "Converting...";
       downloadBtn.style.display = "none";
 
-      const payload = {
-        sheet: document.getElementById("sheetInput").value.trim(),
-        range: document.getElementById("rangeInput").value.trim(),
-        header_row: document.getElementById("headerRowInput").value.trim()
+      // Get input values
+      var sheetUrl = document.getElementById("sheetInput").value.trim();
+      var rangeVal = document.getElementById("rangeInput").value.trim();
+      var headerRow = document.getElementById("headerRowInput").value.trim();
+
+      var payload = {
+        sheet: sheetUrl,
+        range: rangeVal,
+        header_row: headerRow
       };
 
-      try {
-        const res = await fetch("/convert_link", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(payload)
-        });
-
-        const text = await res.text();
+      // Send request to backend
+      fetch("/convert_link", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      })
+      .then(function(response) {
+        return response.text();
+      })
+      .then(function(text) {
         out.textContent = text;
         
-        // Check if it's valid JSON
+        // Try to parse as JSON to check if valid
         try {
           JSON.parse(text);
           lastJsonData = text;
-          downloadBtn.style.display = "inline-block";
+          downloadBtn.style.display = "block";
         } catch (e) {
-          // Not valid JSON, probably an error
+          // Not valid JSON, probably error message
           downloadBtn.style.display = "none";
         }
-      } catch (err) {
-        out.textContent = JSON.stringify({"error": "request_failed", "message": err.message});
+      })
+      .catch(function(error) {
+        out.textContent = JSON.stringify({"error": "request_failed", "message": error.message});
         downloadBtn.style.display = "none";
-      }
+      });
     });
 
-    // Handle File Upload
-    uploadForm.addEventListener("submit", async (e) => {
+    // Handle file upload form submission
+    uploadForm.addEventListener("submit", function(e) {
       e.preventDefault();
       out.textContent = "Converting...";
       downloadBtn.style.display = "none";
 
-      try {
-        const fd = new FormData(uploadForm);
-        const res = await fetch("/convert", { method: "POST", body: fd });
-        const text = await res.text();
+      var formData = new FormData(uploadForm);
+      
+      // Send file to backend
+      fetch("/convert", {
+        method: "POST",
+        body: formData
+      })
+      .then(function(response) {
+        return response.text();
+      })
+      .then(function(text) {
         out.textContent = text;
         
-        // Check if it's valid JSON
+        // Check if response is valid JSON
         try {
           JSON.parse(text);
           lastJsonData = text;
-          downloadBtn.style.display = "inline-block";
+          downloadBtn.style.display = "block";
         } catch (e) {
-          // Not valid JSON, probably an error
           downloadBtn.style.display = "none";
         }
-      } catch (err) {
-        out.textContent = JSON.stringify({"error": "upload_failed", "message": err.message});
+      })
+      .catch(function(error) {
+        out.textContent = JSON.stringify({"error": "upload_failed", "message": error.message});
         downloadBtn.style.display = "none";
-      }
+      });
     });
   </script>
 </body>
