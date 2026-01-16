@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>SheetBridge — Google Sheet to JSON</title>
+  <title>SheetBridge — Convert to JSON</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; max-width: 900px; }
     input { width: 100%; padding: 10px; margin: 8px 0 16px; box-sizing: border-box; }
@@ -12,37 +12,58 @@
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
     h1 { color: #333; }
+    h2 { color: #555; margin-top: 30px; border-top: 2px solid #ddd; padding-top: 20px; }
     label { font-weight: bold; color: #555; display: block; }
+    .section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    input[type="file"] { background: white; }
   </style>
 </head>
 <body>
   <h1>📊 SheetBridge</h1>
-  <p>Paste a Google Sheets link + range to convert into JSON.</p>
+  <p>Convert spreadsheets to JSON - Upload a file or paste a Google Sheets link</p>
 
-  <label>Google Sheets URL or Spreadsheet ID</label>
-  <input id="sheetInput" placeholder="https://docs.google.com/spreadsheets/d/.... or just the ID" />
+  <!-- Option 1: Google Sheets Link -->
+  <div class="section">
+    <h2>Option 1: Google Sheets Link</h2>
+    
+    <label>Google Sheets URL or Spreadsheet ID</label>
+    <input id="sheetInput" placeholder="https://docs.google.com/spreadsheets/d/.... or just the ID" />
 
-  <div class="row">
-    <div>
-      <label>Range (optional)</label>
-      <input id="rangeInput" placeholder="Sheet!A1:D100 (leave blank to auto-detect)" />
+    <div class="row">
+      <div>
+        <label>Range (optional)</label>
+        <input id="rangeInput" placeholder="Sheet!A1:D100 (leave blank to auto-detect)" />
+      </div>
+      <div>
+        <label>Header Row Start (optional)</label>
+        <input id="headerRowInput" placeholder="e.g. 1 or 7 (leave blank = first row)" />
+      </div>
     </div>
-    <div>
-      <label>Header Row Start (optional)</label>
-      <input id="headerRowInput" placeholder="e.g. 1 or 7 (leave blank = first row in range)" />
-    </div>
+
+    <button id="btnLink">Convert Link to JSON</button>
   </div>
 
-  <button id="btn">Convert to JSON</button>
+  <!-- Option 2: File Upload -->
+  <div class="section">
+    <h2>Option 2: Upload File</h2>
+    
+    <label>Upload .csv or .xlsx file</label>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".csv,.xlsx" required />
+      <button type="submit">Convert File to JSON</button>
+    </form>
+  </div>
 
   <h3>Output</h3>
   <pre id="out">{}</pre>
 
   <script>
-    const btn = document.getElementById("btn");
+    const btnLink = document.getElementById("btnLink");
+    const uploadForm = document.getElementById("uploadForm");
     const out = document.getElementById("out");
 
-    btn.addEventListener("click", async () => {
+    // Handle Google Sheets Link
+    btnLink.addEventListener("click", async () => {
       out.textContent = "Converting...";
 
       const payload = {
@@ -51,14 +72,33 @@
         header_row: document.getElementById("headerRowInput").value.trim()
       };
 
-      const res = await fetch("/convert_link", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await fetch("/convert_link", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
 
-      const text = await res.text(); // show JSON or error HTML
-      out.textContent = text;
+        const text = await res.text();
+        out.textContent = text;
+      } catch (err) {
+        out.textContent = JSON.stringify({"error": "request_failed", "message": err.message});
+      }
+    });
+
+    // Handle File Upload
+    uploadForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      out.textContent = "Converting...";
+
+      try {
+        const fd = new FormData(uploadForm);
+        const res = await fetch("/convert", { method: "POST", body: fd });
+        const text = await res.text();
+        out.textContent = text;
+      } catch (err) {
+        out.textContent = JSON.stringify({"error": "upload_failed", "message": err.message});
+      }
     });
   </script>
 </body>
